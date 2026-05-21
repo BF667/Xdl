@@ -36,9 +36,9 @@ class DownloadManagerState:
 
     def __init__(self):
         self.router = DownloadRouter()
-        self._downloads: dict = {}  # id -> DownloadItem
-        self._threads: dict = {}  # id -> thread
-        self._stop_events: dict = {}  # id -> Event
+        self._downloads: dict = {}
+        self._threads: dict = {}
+        self._stop_events: dict = {}
         self._lock = threading.Lock()
         self.default_save_path = os.path.join(
             os.path.expanduser("~"), "Downloads", "Xdl"
@@ -57,7 +57,6 @@ class DownloadManagerState:
         save_path = save_path or self.default_save_path
         os.makedirs(save_path, exist_ok=True)
 
-        # Create download item
         media_format = ""
         media_quality = ""
 
@@ -73,12 +72,8 @@ class DownloadManagerState:
             }
             media_quality = quality_map.get(quality, "best")
 
-        item = self.router.create_item(
-            url=url,
-            save_path=save_path,
-        )
+        item = self.router.create_item(url=url, save_path=save_path)
 
-        # Apply user settings
         if download_type == "Audio":
             item.category = DownloadCategory.AUDIO
             item.is_media = True
@@ -91,7 +86,6 @@ class DownloadManagerState:
 
         item.num_segments = segments
 
-        # Try to get info
         try:
             info = self.router.get_info(url)
             if info.get("filename") and item.filename == "unknown":
@@ -103,18 +97,14 @@ class DownloadManagerState:
         except Exception:
             pass
 
-        # Start download
         stop_event = threading.Event()
         self._stop_events[item.id] = stop_event
 
         with self._lock:
             self._downloads[item.id] = item
 
-        # Start download in background thread
         thread = threading.Thread(
-            target=self._run_download,
-            args=(item, stop_event),
-            daemon=True
+            target=self._run_download, args=(item, stop_event), daemon=True
         )
         self._threads[item.id] = thread
         thread.start()
@@ -132,12 +122,11 @@ class DownloadManagerState:
         """Run download in background thread."""
         downloader = self.router.get_downloader(item.url)
 
-        # Wire up callbacks
         original_on_progress = downloader.on_progress
         original_on_complete = downloader.on_complete
         original_on_error = downloader.on_error
 
-        downloader.on_progress = None  # We poll instead
+        downloader.on_progress = None
         downloader.on_complete = None
         downloader.on_error = None
 
@@ -159,7 +148,6 @@ class DownloadManagerState:
                 item.status = DownloadStatus.ERROR
                 item.error_message = str(e)
         finally:
-            # Restore callbacks
             downloader.on_progress = original_on_progress
             downloader.on_complete = original_on_complete
             downloader.on_error = original_on_error
@@ -167,7 +155,6 @@ class DownloadManagerState:
             self._stop_events.pop(item.id, None)
 
     def pause_download(self, item_id: str) -> dict:
-        """Pause a download."""
         with self._lock:
             item = self._downloads.get(item_id)
             if item and item.status == DownloadStatus.DOWNLOADING:
@@ -178,20 +165,15 @@ class DownloadManagerState:
         return {"status": "error", "message": "Download not found or not active"}
 
     def resume_download(self, item_id: str) -> dict:
-        """Resume a paused/errored download."""
         with self._lock:
             item = self._downloads.get(item_id)
             if item and item.status in (DownloadStatus.PAUSED, DownloadStatus.ERROR):
                 item.status = DownloadStatus.PENDING
                 item.error_message = ""
-
                 stop_event = threading.Event()
                 self._stop_events[item_id] = stop_event
-
                 thread = threading.Thread(
-                    target=self._run_download,
-                    args=(item, stop_event),
-                    daemon=True
+                    target=self._run_download, args=(item, stop_event), daemon=True
                 )
                 self._threads[item_id] = thread
                 thread.start()
@@ -199,7 +181,6 @@ class DownloadManagerState:
         return {"status": "error", "message": "Download not found or not pausable"}
 
     def cancel_download(self, item_id: str) -> dict:
-        """Cancel a download."""
         with self._lock:
             item = self._downloads.get(item_id)
             if item:
@@ -211,7 +192,6 @@ class DownloadManagerState:
         return {"status": "error", "message": "Download not found"}
 
     def remove_download(self, item_id: str) -> dict:
-        """Remove a download from the list."""
         with self._lock:
             item = self._downloads.get(item_id)
             if item:
@@ -222,13 +202,11 @@ class DownloadManagerState:
         return {"status": "error", "message": "Download not found"}
 
     def get_download_list(self, category_filter: str = "All") -> list:
-        """Get list of all downloads as table data."""
         with self._lock:
             items = list(self._downloads.values())
 
         rows = []
         for item in items:
-            # Apply filter
             if category_filter != "All":
                 if category_filter == "Completed" and item.status != DownloadStatus.COMPLETED:
                     continue
@@ -274,12 +252,10 @@ class DownloadManagerState:
         return rows
 
     def get_download_info(self, item_id: str) -> dict:
-        """Get detailed info about a specific download."""
         with self._lock:
             item = self._downloads.get(item_id)
             if not item:
                 return {"error": "Download not found"}
-
             return {
                 "id": item.id,
                 "url": item.url,
@@ -302,16 +278,13 @@ class DownloadManagerState:
             }
 
     def get_stats(self) -> dict:
-        """Get download statistics."""
         with self._lock:
             items = list(self._downloads.values())
-
         active = sum(1 for i in items if i.status == DownloadStatus.DOWNLOADING)
         completed = sum(1 for i in items if i.status == DownloadStatus.COMPLETED)
         paused = sum(1 for i in items if i.status == DownloadStatus.PAUSED)
         errors = sum(1 for i in items if i.status == DownloadStatus.ERROR)
         total_speed = sum(i.speed for i in items if i.status == DownloadStatus.DOWNLOADING)
-
         return {
             "total": len(items),
             "active": active,
@@ -322,10 +295,8 @@ class DownloadManagerState:
         }
 
     def detect_url(self, url: str) -> dict:
-        """Detect site and get info for a URL."""
         if not is_url(url):
             return {"site": "Invalid URL", "filename": "", "file_size": "", "category": ""}
-
         site = self.router.detect_site(url)
         try:
             info = self.router.get_info(url)
@@ -349,109 +320,13 @@ state = DownloadManagerState()
 #  Gradio 6 Interface
 # ──────────────────────────────────────────────
 
-# Custom CSS for professional look
-CUSTOM_CSS = """
-:root {
-    --primary: #2196F3;
-    --primary-dark: #1565C0;
-    --success: #4CAF50;
-    --warning: #FF9800;
-    --error: #F44336;
-    --bg-dark: #1a1a2e;
-    --bg-card: #16213e;
-    --bg-light: #0f3460;
-    --text: #e0e0e0;
-}
-
-.gradio-container {
-    max-width: 1400px !important;
-}
-
-/* Header styling */
-.xdl-header {
-    background: linear-gradient(135deg, var(--bg-dark), var(--bg-light));
-    border-radius: 16px;
-    padding: 2rem;
-    margin-bottom: 1rem;
-    text-align: center;
-    color: white;
-    border: 1px solid rgba(255,255,255,0.1);
-}
-
-.xdl-header h1 {
-    font-size: 2.5rem;
-    font-weight: 800;
-    margin: 0;
-    background: linear-gradient(90deg, #2196F3, #00BCD4, #4CAF50);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-}
-
-.xdl-header p {
-    color: #90A4AE;
-    font-size: 1.1rem;
-    margin-top: 0.5rem;
-}
-
-/* Stats cards */
-.stat-card {
-    background: var(--bg-card);
-    border-radius: 12px;
-    padding: 1rem;
-    text-align: center;
-    border: 1px solid rgba(255,255,255,0.05);
-    transition: transform 0.2s;
-}
-.stat-card:hover {
-    transform: translateY(-2px);
-    border-color: var(--primary);
-}
-.stat-number {
-    font-size: 2rem;
-    font-weight: 800;
-    color: var(--primary);
-}
-.stat-label {
-    color: #78909C;
-    font-size: 0.85rem;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-}
-
-/* Table styling */
-.data-table {
-    border-radius: 12px;
-    overflow: hidden;
-}
-
-/* Download type radio */
-.type-radio label {
-    cursor: pointer;
-    transition: all 0.2s;
-}
-"""
-
-
 def create_demo():
     """Create the Gradio demo interface."""
-
-    _theme = gr.themes.Soft(
-        primary_hue=gr.themes.colors.blue,
-        secondary_hue=gr.themes.colors.cyan,
-        neutral_hue=gr.themes.colors.slate,
-        font=gr.themes.GoogleFont("Inter"),
-    )
 
     with gr.Blocks(title="Xdl Download Manager") as demo:
 
         # ── Header ──
-        gr.HTML("""
-        <div class="xdl-header">
-            <h1>Xdl Download Manager</h1>
-            <p>Open-source IDM alternative | 1000+ video sites | Multi-threaded downloads | Resume support</p>
-        </div>
-        """)
+        gr.Markdown("# Xdl Download Manager\nOpen-source IDM alternative | 1000+ video sites | Multi-threaded downloads | Resume support")
 
         # ── Stats Row ──
         with gr.Row():
@@ -467,53 +342,41 @@ def create_demo():
             # ═══════════════════════════════════
             with gr.Tab("Add Download", id="add_tab"):
                 with gr.Row():
-                    # Left: URL input & detection
                     with gr.Column(scale=2):
                         url_input = gr.Textbox(
                             label="Download URL",
                             placeholder="Paste URL here (YouTube, Google Drive, MediaFire, any direct link...)",
                             lines=1,
                             max_lines=1,
-                            scale=5,
                         )
-
                         with gr.Row():
                             detect_btn = gr.Button("Detect Site", variant="secondary", size="sm")
-                            detect_info = gr.JSON(label="Detection Result", visible=True)
-
-                        # Save path
+                            detect_info = gr.JSON(label="Detection Result")
                         save_path_input = gr.Textbox(
                             label="Save Path",
                             value=state.default_save_path,
                             lines=1,
                         )
 
-                    # Right: Download options
                     with gr.Column(scale=1):
                         download_type = gr.Radio(
                             choices=["Video", "Audio"],
                             value="Video",
                             label="Download Type",
                         )
-
                         quality_dropdown = gr.Dropdown(
                             choices=["Best Quality", "720p", "480p", "360p", "240p"],
                             value="Best Quality",
                             label="Video Quality",
                         )
-
                         audio_format_dropdown = gr.Dropdown(
                             choices=["MP3", "AAC", "FLAC", "Opus", "WAV", "Best Quality"],
                             value="MP3",
                             label="Audio Format",
                             interactive=False,
                         )
-
                         segments_slider = gr.Slider(
-                            minimum=1,
-                            maximum=32,
-                            value=8,
-                            step=1,
+                            minimum=1, maximum=32, value=8, step=1,
                             label="Download Segments",
                             info="More segments = faster for large files",
                         )
@@ -522,7 +385,6 @@ def create_demo():
                     add_btn = gr.Button("Start Download", variant="primary", size="lg")
                     add_result = gr.Textbox(label="Status", interactive=False)
 
-                # Batch download section
                 gr.Markdown("### Batch Download")
                 batch_urls = gr.Textbox(
                     label="Multiple URLs (one per line)",
@@ -567,8 +429,6 @@ def create_demo():
                             remove_btn = gr.Button("Remove", variant="secondary")
 
                 action_result = gr.Textbox(label="Action Result", interactive=False)
-
-                # Download details
                 download_details = gr.JSON(label="Download Details")
 
             # ═══════════════════════════════════
@@ -673,45 +533,29 @@ def create_demo():
         # ──────────────────────────────────────
 
         def detect_url_handler(url):
-            """Handle URL detection."""
             if not url or not url.strip():
                 return {"site": "No URL provided", "filename": "", "file_size": "", "category": ""}
-            result = state.detect_url(url.strip())
-            return result
+            return state.detect_url(url.strip())
 
         def toggle_audio_format(download_type):
-            """Toggle audio format dropdown based on download type."""
-            if download_type == "Audio":
-                return gr.Dropdown(interactive=True)
-            else:
-                return gr.Dropdown(interactive=False)
+            return gr.Dropdown(interactive=(download_type == "Audio"))
 
         def toggle_quality(download_type):
-            """Toggle quality dropdown based on download type."""
-            if download_type == "Audio":
-                return gr.Dropdown(interactive=False)
-            else:
-                return gr.Dropdown(interactive=True)
+            return gr.Dropdown(interactive=(download_type != "Audio"))
 
         def add_download_handler(url, save_path, download_type, quality, audio_format, segments):
-            """Handle adding a new download."""
             if not url or not url.strip():
                 return "Please enter a URL"
             result = state.add_download(
-                url=url.strip(),
-                save_path=save_path,
-                download_type=download_type,
-                quality=quality,
-                audio_format=audio_format,
-                segments=int(segments),
+                url=url.strip(), save_path=save_path,
+                download_type=download_type, quality=quality,
+                audio_format=audio_format, segments=int(segments),
             )
             if result["status"] == "started":
                 return f"Download started: {result['filename']} ({result['site']})"
-            else:
-                return f"Error: {result.get('message', 'Unknown error')}"
+            return f"Error: {result.get('message', 'Unknown error')}"
 
         def batch_download_handler(urls_text, save_path):
-            """Handle batch download."""
             if not urls_text or not urls_text.strip():
                 return "No URLs provided"
             urls = [u.strip() for u in urls_text.strip().split("\n") if is_url(u.strip())]
@@ -724,57 +568,47 @@ def create_demo():
             return f"Added {len(urls)} downloads:\n" + "\n".join(results)
 
         def refresh_downloads(category_filter):
-            """Refresh the download list."""
-            rows = state.get_download_list(category_filter)
-            return rows
+            return state.get_download_list(category_filter)
 
         def update_stats():
-            """Update stats display."""
             stats = state.get_stats()
             return stats["total"], stats["active"], stats["completed"], stats["total_speed"]
 
         def resume_handler(item_id):
-            """Handle resume action."""
             if not item_id or not item_id.strip():
                 return "Please enter a download ID", None
             result = state.resume_download(item_id.strip())
             return f"{'Resumed' if result['status'] == 'resumed' else 'Error: ' + result.get('message', 'Unknown')}: {result.get('filename', '')}", None
 
         def pause_handler(item_id):
-            """Handle pause action."""
             if not item_id or not item_id.strip():
                 return "Please enter a download ID", None
             result = state.pause_download(item_id.strip())
             return f"{'Paused' if result['status'] == 'paused' else 'Error: ' + result.get('message', 'Unknown')}: {result.get('filename', '')}", None
 
         def cancel_handler(item_id):
-            """Handle cancel action."""
             if not item_id or not item_id.strip():
                 return "Please enter a download ID", None
             result = state.cancel_download(item_id.strip())
             return f"{'Cancelled' if result['status'] == 'cancelled' else 'Error: ' + result.get('message', 'Unknown')}: {result.get('filename', '')}", None
 
         def remove_handler(item_id):
-            """Handle remove action."""
             if not item_id or not item_id.strip():
                 return "Please enter a download ID", None
             result = state.remove_download(item_id.strip())
             return f"{'Removed' if result['status'] == 'removed' else 'Error: ' + result.get('message', 'Unknown')}: {result.get('filename', '')}", None
 
         def info_handler(url):
-            """Handle URL info request."""
             if not url or not url.strip():
                 return {"error": "Please enter a URL"}
             return state.detect_url(url.strip())
 
         def details_handler(item_id):
-            """Handle download details request."""
             if not item_id or not item_id.strip():
                 return {"error": "Please enter a download ID"}
             return state.get_download_info(item_id.strip())
 
         def save_settings_handler(save_path, concurrent, segments, proxy, user_agent, speed_limit):
-            """Handle saving settings."""
             state.default_save_path = save_path
             state.router._fallback._engine.max_concurrent = int(concurrent)
             state.router._fallback._engine.default_segments = int(segments)
@@ -788,145 +622,66 @@ def create_demo():
         #  Wire up events
         # ──────────────────────────────────────
 
-        # URL detection
-        detect_btn.click(
-            fn=detect_url_handler,
-            inputs=[url_input],
-            outputs=[detect_info],
-        )
+        detect_btn.click(fn=detect_url_handler, inputs=[url_input], outputs=[detect_info])
 
-        # Toggle audio/quality based on type
-        download_type.change(
-            fn=toggle_audio_format,
-            inputs=[download_type],
-            outputs=[audio_format_dropdown],
-        )
-        download_type.change(
-            fn=toggle_quality,
-            inputs=[download_type],
-            outputs=[quality_dropdown],
-        )
+        download_type.change(fn=toggle_audio_format, inputs=[download_type], outputs=[audio_format_dropdown])
+        download_type.change(fn=toggle_quality, inputs=[download_type], outputs=[quality_dropdown])
 
-        # Add download
         add_btn.click(
             fn=add_download_handler,
             inputs=[url_input, save_path_input, download_type, quality_dropdown, audio_format_dropdown, segments_slider],
             outputs=[add_result],
         ).then(
-            fn=refresh_downloads,
-            inputs=[category_filter],
-            outputs=[downloads_table],
+            fn=refresh_downloads, inputs=[category_filter], outputs=[downloads_table],
         ).then(
-            fn=update_stats,
-            outputs=[stat_total, stat_active, stat_completed, stat_speed],
+            fn=update_stats, outputs=[stat_total, stat_active, stat_completed, stat_speed],
         )
 
-        # Batch download
         batch_btn.click(
-            fn=batch_download_handler,
-            inputs=[batch_urls, save_path_input],
-            outputs=[batch_result],
+            fn=batch_download_handler, inputs=[batch_urls, save_path_input], outputs=[batch_result],
         ).then(
-            fn=refresh_downloads,
-            inputs=[category_filter],
-            outputs=[downloads_table],
+            fn=refresh_downloads, inputs=[category_filter], outputs=[downloads_table],
         )
 
-        # Downloads tab
         refresh_btn.click(
-            fn=refresh_downloads,
-            inputs=[category_filter],
-            outputs=[downloads_table],
+            fn=refresh_downloads, inputs=[category_filter], outputs=[downloads_table],
         ).then(
-            fn=update_stats,
-            outputs=[stat_total, stat_active, stat_completed, stat_speed],
+            fn=update_stats, outputs=[stat_total, stat_active, stat_completed, stat_speed],
         )
 
-        category_filter.change(
-            fn=refresh_downloads,
-            inputs=[category_filter],
-            outputs=[downloads_table],
-        )
+        category_filter.change(fn=refresh_downloads, inputs=[category_filter], outputs=[downloads_table])
 
-        # Action buttons
-        resume_btn.click(
-            fn=resume_handler,
-            inputs=[selected_id],
-            outputs=[action_result, download_details],
+        resume_btn.click(fn=resume_handler, inputs=[selected_id], outputs=[action_result, download_details]).then(
+            fn=refresh_downloads, inputs=[category_filter], outputs=[downloads_table])
+
+        pause_btn.click(fn=pause_handler, inputs=[selected_id], outputs=[action_result, download_details]).then(
+            fn=refresh_downloads, inputs=[category_filter], outputs=[downloads_table])
+
+        cancel_btn.click(fn=cancel_handler, inputs=[selected_id], outputs=[action_result, download_details]).then(
+            fn=refresh_downloads, inputs=[category_filter], outputs=[downloads_table])
+
+        remove_btn.click(fn=remove_handler, inputs=[selected_id], outputs=[action_result, download_details]).then(
+            fn=refresh_downloads, inputs=[category_filter], outputs=[downloads_table],
         ).then(
-            fn=refresh_downloads,
-            inputs=[category_filter],
-            outputs=[downloads_table],
+            fn=update_stats, outputs=[stat_total, stat_active, stat_completed, stat_speed],
         )
 
-        pause_btn.click(
-            fn=pause_handler,
-            inputs=[selected_id],
-            outputs=[action_result, download_details],
-        ).then(
-            fn=refresh_downloads,
-            inputs=[category_filter],
-            outputs=[downloads_table],
-        )
+        selected_id.change(fn=details_handler, inputs=[selected_id], outputs=[download_details])
 
-        cancel_btn.click(
-            fn=cancel_handler,
-            inputs=[selected_id],
-            outputs=[action_result, download_details],
-        ).then(
-            fn=refresh_downloads,
-            inputs=[category_filter],
-            outputs=[downloads_table],
-        )
+        info_btn.click(fn=info_handler, inputs=[info_url], outputs=[info_result])
 
-        remove_btn.click(
-            fn=remove_handler,
-            inputs=[selected_id],
-            outputs=[action_result, download_details],
-        ).then(
-            fn=refresh_downloads,
-            inputs=[category_filter],
-            outputs=[downloads_table],
-        ).then(
-            fn=update_stats,
-            outputs=[stat_total, stat_active, stat_completed, stat_speed],
-        )
-
-        # Get details when ID entered
-        selected_id.change(
-            fn=details_handler,
-            inputs=[selected_id],
-            outputs=[download_details],
-        )
-
-        # URL info tab
-        info_btn.click(
-            fn=info_handler,
-            inputs=[info_url],
-            outputs=[info_result],
-        )
-
-        # Settings
         save_settings_btn.click(
             fn=save_settings_handler,
             inputs=[settings_save_path, settings_concurrent, settings_segments, settings_proxy, settings_user_agent, settings_speed_limit],
             outputs=[settings_result],
         )
 
-        # Auto-refresh timer using gr.Timer (Gradio 6+)
-        # Refresh downloads table and stats every 3 seconds
+        # Auto-refresh using gr.Timer (Gradio 6+)
         timer = gr.Timer(value=3.0)
-        timer.tick(
-            fn=refresh_downloads,
-            inputs=[category_filter],
-            outputs=[downloads_table],
-        )
-        timer.tick(
-            fn=update_stats,
-            outputs=[stat_total, stat_active, stat_completed, stat_speed],
-        )
+        timer.tick(fn=refresh_downloads, inputs=[category_filter], outputs=[downloads_table])
+        timer.tick(fn=update_stats, outputs=[stat_total, stat_active, stat_completed, stat_speed])
 
-    return demo, _theme, CUSTOM_CSS
+    return demo
 
 
 # ──────────────────────────────────────────────
@@ -957,14 +712,12 @@ def main():
     print("    - 1000+ video sites supported")
     print("=" * 60 + "\n")
 
-    demo, _theme, _css = create_demo()
+    demo = create_demo()
     demo.launch(
         server_name=args.host,
         server_port=args.port,
         share=args.share,
         inbrowser=not args.no_browser,
-        theme=_theme,
-        css=_css,
     )
 
 

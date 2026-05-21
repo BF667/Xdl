@@ -87,6 +87,12 @@ python3 gradio_demo.py --port 8080        # Launch on custom port
 python3 gradio_demo.py --no-browser       # Don't open browser automatically
 ```
 
+**Screenshots:**
+
+| Add Download | Downloads | Settings |
+|:---:|:---:|:---:|
+| ![Add Download](screenshots/add_download.png) | ![Downloads](screenshots/downloads.png) | ![Settings](screenshots/settings.png) |
+
 The Gradio web demo provides all download manager features through a browser:
 - Add single or batch downloads
 - URL auto-detection and site identification
@@ -144,6 +150,10 @@ Xdl/
 ├── requirements.txt                 # Python dependencies
 ├── setup.py                         # Package setup
 ├── LICENSE                          # Unlicense (Public Domain)
+├── screenshots/                     # Web demo screenshots
+│   ├── add_download.png
+│   ├── downloads.png
+│   └── settings.png
 │
 └── xdl/
     ├── __init__.py                  # Package metadata
