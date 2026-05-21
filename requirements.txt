@@ -5,3 +5,4 @@ beautifulsoup4>=4.11
 tqdm>=4.64
 pyperclip>=1.8
 lxml>=4.9
+gradio>=6.0

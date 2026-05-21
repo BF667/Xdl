@@ -78,6 +78,26 @@ python3 main.py --cli URL -o /path/to     # Save to specific folder
 python3 main.py --info URL                # Show URL information only
 ```
 
+### Gradio Web Demo
+Launch a full-featured web interface powered by **Gradio 6+**:
+```bash
+python3 gradio_demo.py                    # Launch on http://localhost:7860
+python3 gradio_demo.py --share            # Launch with public share link
+python3 gradio_demo.py --port 8080        # Launch on custom port
+python3 gradio_demo.py --no-browser       # Don't open browser automatically
+```
+
+The Gradio web demo provides all download manager features through a browser:
+- Add single or batch downloads
+- URL auto-detection and site identification
+- Video/Audio quality and format selection
+- Real-time progress tracking with auto-refresh (3-second intervals)
+- Pause/Resume/Cancel/Remove controls
+- Download details viewer
+- Category filtering
+- Connection settings (proxy, user-agent, speed limit)
+- About page with feature overview
+
 ---
 
 ## Installation
@@ -94,14 +114,17 @@ pip install -r requirements.txt
 
 Or install individually:
 ```bash
-pip install PyQt5 yt-dlp requests beautifulsoup4 tqdm pyperclip lxml
+pip install PyQt5 yt-dlp requests beautifulsoup4 tqdm pyperclip lxml gradio
 ```
 
 ### Run
 
 ```bash
-# GUI Mode
+# GUI Mode (PyQt5 Desktop)
 python3 main.py
+
+# Gradio Web Demo (Browser)
+python3 gradio_demo.py
 
 # CLI Mode
 python3 main.py --cli https://youtube.com/watch?v=dQw4w9WgXcQ
@@ -117,6 +140,7 @@ python3 main.py --info https://youtube.com/watch?v=dQw4w9WgXcQ
 ```
 Xdl/
 ├── main.py                          # Entry point (GUI + CLI modes)
+├── gradio_demo.py                   # Gradio 6+ web interface
 ├── requirements.txt                 # Python dependencies
 ├── setup.py                         # Package setup
 ├── LICENSE                          # Unlicense (Public Domain)
@@ -427,7 +451,8 @@ Anyone is free to copy, modify, publish, use, compile, sell, or distribute this 
 ## Credits
 
 - **yt-dlp** — [https://github.com/yt-dlp/yt-dlp](https://github.com/yt-dlp/yt-dlp) (video/audio extraction engine)
-- **PyQt5** — [https://www.riverbankcomputing.com/software/pyqt/](https://www.riverbankcomputing.com/software/pyqt/) (GUI framework)
+- **Gradio 6** — [https://gradio.app](https://gradio.app) (web interface framework)
+- **PyQt5** — [https://www.riverbankcomputing.com/software/pyqt/](https://www.riverbankcomputing.com/software/pyqt/) (desktop GUI framework)
 - **requests** — [https://docs.python-requests.org/](https://docs.python-requests.org/) (HTTP library)
 - **BeautifulSoup** — [https://www.crummy.com/software/BeautifulSoup/](https://www.crummy.com/software/BeautifulSoup/) (HTML parsing)
 
