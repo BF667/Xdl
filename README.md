@@ -1,8 +1,8 @@
 # Xdl Download Manager
 
-**An open-source alternative to Internet Download Manager (IDM)** — built with Python and PyQt5.
+**An open-source alternative to Internet Download Manager (IDM)** — built with Python, TypeScript, and Next.js.
 
-Xdl is a powerful, feature-rich download manager that supports video/audio downloads from 1000+ sites, cloud storage services, and generic HTTP/HTTPS file downloads with multi-threaded segmented downloading, resume support, and an IDM-like graphical interface.
+Xdl is a powerful, feature-rich download manager that supports video/audio downloads from 1000+ sites, cloud storage services, and generic HTTP/HTTPS file downloads with multi-threaded segmented downloading, resume support, and a modern web interface deployable via ngrok.
 
 ---
 
@@ -18,21 +18,21 @@ Powered by [yt-dlp](https://github.com/yt-dlp/yt-dlp), Xdl supports downloading 
 
 | Site | Video | Audio | Playlists |
 |------|:-----:|:-----:|:---------:|
-| YouTube | ✅ | ✅ | ✅ |
-| Vimeo | ✅ | ✅ | ✅ |
-| Dailymotion | ✅ | ✅ | ✅ |
-| TikTok | ✅ | ✅ | — |
-| Twitter/X | ✅ | ✅ | — |
-| Facebook | ✅ | ✅ | — |
-| Instagram | ✅ | ✅ | — |
-| Twitch | ✅ | ✅ | ✅ |
-| Reddit | ✅ | ✅ | — |
-| SoundCloud | — | ✅ | ✅ |
-| Bandcamp | — | ✅ | ✅ |
-| Bilibili | ✅ | ✅ | ✅ |
-| Rumble | ✅ | ✅ | — |
-| Odysee | ✅ | ✅ | ✅ |
-| 900+ more sites | ✅ | ✅ | varies |
+| YouTube | Yes | Yes | Yes |
+| Vimeo | Yes | Yes | Yes |
+| Dailymotion | Yes | Yes | Yes |
+| TikTok | Yes | Yes | — |
+| Twitter/X | Yes | Yes | — |
+| Facebook | Yes | Yes | — |
+| Instagram | Yes | Yes | — |
+| Twitch | Yes | Yes | Yes |
+| Reddit | Yes | Yes | — |
+| SoundCloud | — | Yes | Yes |
+| Bandcamp | — | Yes | Yes |
+| Bilibili | Yes | Yes | Yes |
+| Rumble | Yes | Yes | — |
+| Odysee | Yes | Yes | Yes |
+| 900+ more sites | Yes | Yes | varies |
 
 **Video quality options:** Best, 720p, 480p, 360p, 240p
 
@@ -47,13 +47,30 @@ Powered by [yt-dlp](https://github.com/yt-dlp/yt-dlp), Xdl supports downloading 
 | **HuggingFace** | Model/dataset downloads, URL resolution |
 | **Generic HTTP/HTTPS** | Any direct download link, HEAD-based file detection |
 
-### IDM-Like Graphical Interface
-- **Category sidebar** — Auto-organize downloads by type (Video, Audio, Documents, Compressed, Programs, Images)
-- **Download table** — Real-time progress bars, speed, ETA, status, site name, and date
-- **Toolbar** — Quick access to Add, Resume, Pause, Cancel, Delete, Resume All, Pause All, Schedule, Batch, Open File, Open Folder, Settings
-- **Right-click context menu** — Quick actions on any download item
-- **System tray icon** — Minimize to tray, tray notifications on download completion
-- **Color-coded status** — Blue (downloading), Green (completed), Orange (paused), Red (error), Gray (queued)
+### TypeScript Web Interface (Primary UI)
+The main web interface is built with **Next.js 16 + TypeScript + Tailwind CSS + shadcn/ui**, providing a modern, responsive download manager that works in any browser and can be deployed via ngrok for remote access:
+
+- **Stats dashboard** — Real-time overview of total, active, completed downloads and speed
+- **Add Download** — URL input with auto-detection, quality/format selection, segment control, and batch download support
+- **Downloads list** — Filter by status or category, pause/resume/cancel/remove controls, progress bars with speed and ETA
+- **URL Info** — Analyze any URL to see site, filename, size, and category before downloading
+- **Settings** — Configure save path, concurrent downloads, segments, proxy, user-agent, and speed limit
+- **About** — Feature overview and credits
+- **Auto-refresh** — Downloads poll every 2 seconds for live progress updates
+- **Ngrok ready** — Deploy with one command for public access
+
+**Web UI Screenshots:**
+
+| Add Download | Downloads | Settings |
+|:---:|:---:|:---:|
+| ![Add Download](screenshots/webui_add_download.png) | ![Downloads](screenshots/webui_downloads.png) | ![Settings](screenshots/webui_settings.png) |
+
+| URL Info | About |
+|:---:|:---:|
+| ![URL Info](screenshots/webui_url_info.png) | ![About](screenshots/webui_about.png) |
+
+### Gradio Web Demo (Legacy)
+A simpler Python-based web interface powered by **Gradio 6+**, useful as a lightweight alternative when Node.js is not available. Launch with `python3 gradio_demo.py`.
 
 ### Download Management
 - **Queue system** — Priority-based download queue with concurrent download limiting (1-10 simultaneous)
@@ -68,7 +85,7 @@ Powered by [yt-dlp](https://github.com/yt-dlp/yt-dlp), Xdl supports downloading 
 - **Categories** — Custom subfolder names for each file category
 
 ### CLI Mode
-Use Xdl from the command line without the GUI:
+Use Xdl from the command line without any GUI:
 ```bash
 python3 main.py --cli URL                 # Download with default settings
 python3 main.py --cli URL -a              # Download as audio (MP3)
@@ -78,41 +95,16 @@ python3 main.py --cli URL -o /path/to     # Save to specific folder
 python3 main.py --info URL                # Show URL information only
 ```
 
-### Gradio Web Demo
-Launch a full-featured web interface powered by **Gradio 6+**:
-```bash
-python3 gradio_demo.py                    # Launch on http://localhost:7860
-python3 gradio_demo.py --share            # Launch with public share link
-python3 gradio_demo.py --port 8080        # Launch on custom port
-python3 gradio_demo.py --no-browser       # Don't open browser automatically
-```
-
-**Screenshots:**
-
-| Add Download | Downloads | Settings |
-|:---:|:---:|:---:|
-| ![Add Download](screenshots/add_download.png) | ![Downloads](screenshots/downloads.png) | ![Settings](screenshots/settings.png) |
-
-The Gradio web demo provides all download manager features through a browser:
-- Add single or batch downloads
-- URL auto-detection and site identification
-- Video/Audio quality and format selection
-- Real-time progress tracking with auto-refresh (3-second intervals)
-- Pause/Resume/Cancel/Remove controls
-- Download details viewer
-- Category filtering
-- Connection settings (proxy, user-agent, speed limit)
-- About page with feature overview
-
 ---
 
 ## Installation
 
 ### Prerequisites
 - **Python 3.8+**
+- **Node.js 18+** (for the TypeScript web UI)
 - **FFmpeg** (required for audio extraction and video merging) — [Download](https://ffmpeg.org/download.html)
 
-### Install Dependencies
+### Install Python Dependencies
 
 ```bash
 pip install -r requirements.txt
@@ -120,20 +112,44 @@ pip install -r requirements.txt
 
 Or install individually:
 ```bash
-pip install PyQt5 yt-dlp requests beautifulsoup4 tqdm pyperclip lxml gradio
+pip install PyQt5 yt-dlp requests beautifulsoup4 tqdm pyperclip lxml gradio fastapi uvicorn pyngrok
+```
+
+### Install Web UI Dependencies
+
+```bash
+cd web
+npm install
+# or
+bun install
 ```
 
 ### Run
 
 ```bash
-# GUI Mode (PyQt5 Desktop)
-python3 main.py
+# TypeScript Web UI (Recommended)
+# Terminal 1: Start the API backend
+python3 api.py
 
-# Gradio Web Demo (Browser)
+# Terminal 2: Start the Next.js frontend
+cd web
+npm run dev
+
+# Then open http://localhost:3000
+
+# With ngrok for public access
+python3 api.py --ngrok
+python3 api.py --ngrok --ngrok-token YOUR_TOKEN
+
+# Gradio Web Demo (Python-based)
 python3 gradio_demo.py
+python3 gradio_demo.py --share
 
 # CLI Mode
 python3 main.py --cli https://youtube.com/watch?v=dQw4w9WgXcQ
+
+# PyQt5 Desktop GUI
+python3 main.py
 
 # Get URL info
 python3 main.py --info https://youtube.com/watch?v=dQw4w9WgXcQ
@@ -145,15 +161,35 @@ python3 main.py --info https://youtube.com/watch?v=dQw4w9WgXcQ
 
 ```
 Xdl/
-├── main.py                          # Entry point (GUI + CLI modes)
-├── gradio_demo.py                   # Gradio 6+ web interface
+├── main.py                          # Entry point (PyQt5 GUI + CLI modes)
+├── api.py                           # FastAPI backend (REST API + WebSocket)
+├── gradio_demo.py                   # Gradio 6+ web demo (legacy)
 ├── requirements.txt                 # Python dependencies
 ├── setup.py                         # Package setup
 ├── LICENSE                          # Unlicense (Public Domain)
-├── screenshots/                     # Web demo screenshots
-│   ├── add_download.png
-│   ├── downloads.png
-│   └── settings.png
+├── screenshots/                     # Web UI screenshots
+│   ├── webui_add_download.png
+│   ├── webui_downloads.png
+│   ├── webui_settings.png
+│   ├── webui_url_info.png
+│   ├── webui_about.png
+│   └── webui_full.png
+│
+├── web/                             # TypeScript Web UI (Next.js 16)
+│   ├── package.json
+│   ├── next.config.ts
+│   ├── tailwind.config.ts
+│   ├── tsconfig.json
+│   ├── components.json
+│   ├── src/
+│   │   ├── app/
+│   │   │   ├── page.tsx             # Main download manager page
+│   │   │   ├── layout.tsx           # Root layout
+│   │   │   └── globals.css          # Tailwind CSS styles
+│   │   ├── lib/
+│   │   │   ├── api.ts               # FastAPI client with types
+│   │   │   └── use-downloads.ts     # React hook for real-time state
+│   │   └── components/ui/           # shadcn/ui components (48 components)
 │
 └── xdl/
     ├── __init__.py                  # Package metadata
@@ -175,7 +211,7 @@ Xdl/
     │   ├── generic.py               # Generic HTTP/HTTPS fallback downloader
     │   └── router.py                # Auto site detection & downloader routing
     │
-    ├── gui/                         # PyQt5 graphical interface
+    ├── gui/                         # PyQt5 desktop GUI (legacy)
     │   ├── __init__.py
     │   ├── main_window.py           # IDM-like main window
     │   ├── add_download_dialog.py   # Add URL dialog with format/quality options
@@ -190,75 +226,89 @@ Xdl/
 
 ---
 
+## API Reference
+
+The FastAPI backend (`api.py`) provides a REST API and WebSocket for real-time updates:
+
+### REST Endpoints
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/api/health` | Health check |
+| GET | `/api/stats` | Download statistics |
+| POST | `/api/downloads` | Add a new download |
+| POST | `/api/downloads/batch` | Add multiple downloads |
+| GET | `/api/downloads` | List all downloads |
+| GET | `/api/downloads/{id}` | Get download details |
+| POST | `/api/downloads/{id}/pause` | Pause a download |
+| POST | `/api/downloads/{id}/resume` | Resume a download |
+| POST | `/api/downloads/{id}/cancel` | Cancel a download |
+| DELETE | `/api/downloads/{id}` | Remove a download |
+| POST | `/api/detect` | Detect URL info |
+| GET | `/api/settings` | Get settings |
+| PUT | `/api/settings` | Update settings |
+| GET | `/api/sites` | List supported sites |
+
+### WebSocket
+
+Connect to `ws://localhost:8000/ws` for real-time download updates (broadcast every 2 seconds).
+
+Send `"refresh"` to request an immediate state update.
+
+### Interactive API Docs
+
+When the API server is running, visit:
+- **Swagger UI**: `http://localhost:8000/docs`
+- **ReDoc**: `http://localhost:8000/redoc`
+
+---
+
+## Ngrok Deployment
+
+To expose your Xdl download manager to the internet using ngrok:
+
+```bash
+# Install ngrok Python package
+pip install pyngrok
+
+# Start API with ngrok tunnel
+python3 api.py --ngrok
+
+# With custom auth token
+python3 api.py --ngrok --ngrok-token YOUR_NGROK_TOKEN
+```
+
+The ngrok tunnel creates a public URL that forwards to your local API server. Update the frontend's `API_BASE` in `web/src/lib/api.ts` to point to your ngrok URL for remote access.
+
+---
+
 ## Usage Guide
 
-### Adding a Download
-1. Click **"➕ Add URL"** on the toolbar (or press `Ctrl+N`)
-2. Paste the URL into the input field
+### Adding a Download (Web UI)
+1. Open the web UI at `http://localhost:3000`
+2. Paste the URL into the "Download URL" field
 3. Click **"Detect"** to auto-analyze the URL (site, filename, file size)
 4. Choose download options:
    - **Save path** — Where to save the file
-   - **Category** — Auto-detected or manually selected
    - **Segments** — Number of download threads (1-32, more = faster for large files)
    - **Download type** — Video or Audio (for media sites)
    - **Video quality** — Best, 720p, 480p, 360p, 240p
    - **Audio format** — MP3, AAC, FLAC, Opus, WAV
-5. Click **"Add Download"** to start
+5. Click **"Start Download"** to begin
 
-### Managing Downloads
+### Managing Downloads (Web UI)
 | Action | How |
 |--------|-----|
-| **Pause** | Select download → Click "⏸ Pause" or right-click → Pause |
-| **Resume** | Select paused download → Click "▶ Resume" or double-click |
-| **Cancel** | Select download → Click "⏹ Cancel" |
-| **Delete** | Select download → Click "🗑 Delete" |
-| **Pause All** | Click "⏸ Pause All" on toolbar |
-| **Resume All** | Click "⏩ Resume All" on toolbar |
-| **Open File** | Select completed download → Click "📂 Open File" or double-click |
-| **Open Folder** | Click "📁 Open Folder" to open the download directory |
-| **Copy URL** | Right-click download → "📋 Copy URL" |
+| **Pause** | Click the pause button on the download row |
+| **Resume** | Click the play button on a paused download |
+| **Cancel** | Click the X button on an active download |
+| **Remove** | Click the trash button on a non-active download |
+| **Filter** | Use the filter buttons at the top of the Downloads tab |
 
-### Filtering by Category
-Click any category in the left sidebar to filter the download list:
-- **All Downloads** — Show everything
-- **Video / Audio / Documents / Compressed / Programs / Images / Other** — Filter by file type
-- **Completed** — Show only finished downloads
-- **Queue** — Show pending/scheduled downloads
-
-### Batch Download
-1. Click **"📋 Batch"** on the toolbar
-2. Enter one URL per line
-3. Click OK — all valid URLs will be added to the queue
-
-### Scheduling a Download
-1. Select a download from the list
-2. Click **"⏰ Schedule"** on the toolbar
-3. Enter the start time in `HH:MM` format (e.g., `22:30`)
-
-### Clipboard Monitoring
-When enabled, Xdl watches your clipboard for URLs:
-- **Auto-detect** — URLs copied to clipboard are detected automatically
-- **Notification** — A system tray notification appears when a URL is found
-- **Auto-add** — Optionally add detected URLs to the queue automatically (enable in Settings → Monitoring)
-
-### Settings
-Open settings via **"⚙ Settings"** on the toolbar:
-
-| Tab | Options |
-|-----|---------|
-| **General** | Default save path, max concurrent downloads, default segments, startup options, tray icon |
-| **Connection** | Proxy server (HTTP/SOCKS5), custom User-Agent, connection timeout, max retries, speed limit |
-| **Monitoring** | Clipboard monitoring toggle, auto-add URLs, check interval, video/audio URL filters |
-| **Categories** | Custom subfolder names for each file category |
-
-Settings are saved to `~/.xdl/settings.json` and persist between sessions.
-
----
-
-## CLI Reference
+### CLI Reference
 
 ```
-usage: main.py [-h] [--cli URL] [--info URL] [-o OUTPUT] [-f FORMAT] 
+usage: main.py [-h] [--cli URL] [--info URL] [-o OUTPUT] [-f FORMAT]
                [-q QUALITY] [-a] [--no-gui]
 
 Xdl Download Manager - Open-source IDM Alternative
@@ -272,34 +322,6 @@ optional arguments:
   -q, --quality QUALITY Video quality (best, 720p, 480p, 360p, 240p)
   -a, --audio           Download as audio (MP3)
   --no-gui              Force CLI mode (no GUI)
-```
-
-### CLI Examples
-
-```bash
-# Download a YouTube video in best quality
-python3 main.py --cli https://youtube.com/watch?v=dQw4w9WgXcQ
-
-# Download a YouTube video as MP3 audio
-python3 main.py --cli https://youtube.com/watch?v=dQw4w9WgXcQ -a
-
-# Download as FLAC audio
-python3 main.py --cli https://youtube.com/watch?v=dQw4w9WgXcQ -f flac
-
-# Download a video in 720p
-python3 main.py --cli https://youtube.com/watch?v=dQw4w9WgXcQ -q 720p
-
-# Download to a specific folder
-python3 main.py --cli https://example.com/file.zip -o /home/user/Downloads
-
-# Download from Google Drive
-python3 main.py --cli https://drive.google.com/file/d/FILE_ID/view
-
-# Download from MediaFire
-python3 main.py --cli https://www.mediafire.com/file/FILE_ID/filename.zip/file
-
-# Get info about a URL without downloading
-python3 main.py --info https://youtube.com/watch?v=dQw4w9WgXcQ
 ```
 
 ---
@@ -434,9 +456,9 @@ Set the proxy in **Settings → Connection → Proxy Server**, or it will be app
 - Install FFmpeg and ensure it's in your system PATH
 - Download from: [https://ffmpeg.org/download.html](https://ffmpeg.org/download.html)
 
-### "Clipboard monitoring not working"
-- Make sure `pyperclip` is installed: `pip install pyperclip`
-- Some Linux desktop environments may require additional packages (e.g., `xclip` or `xsel`)
+### "API Offline" in web UI
+- Make sure the FastAPI backend is running: `python3 api.py`
+- The backend must be started before or alongside the Next.js frontend
 
 ---
 
@@ -461,8 +483,11 @@ Anyone is free to copy, modify, publish, use, compile, sell, or distribute this 
 ## Credits
 
 - **yt-dlp** — [https://github.com/yt-dlp/yt-dlp](https://github.com/yt-dlp/yt-dlp) (video/audio extraction engine)
-- **Gradio 6** — [https://gradio.app](https://gradio.app) (web interface framework)
-- **PyQt5** — [https://www.riverbankcomputing.com/software/pyqt/](https://www.riverbankcomputing.com/software/pyqt/) (desktop GUI framework)
+- **FastAPI** — [https://fastapi.tiangolo.com](https://fastapi.tiangolo.com) (backend API framework)
+- **Next.js** — [https://nextjs.org](https://nextjs.org) (TypeScript web frontend)
+- **shadcn/ui** — [https://ui.shadcn.com](https://ui.shadcn.com) (UI component library)
+- **Gradio 6** — [https://gradio.app](https://gradio.app) (Python web demo)
+- **PyQt5** — [https://www.riverbankcomputing.com/software/pyqt/](https://www.riverbankcomputing.com/software/pyqt/) (desktop GUI)
 - **requests** — [https://docs.python-requests.org/](https://docs.python-requests.org/) (HTTP library)
 - **BeautifulSoup** — [https://www.crummy.com/software/BeautifulSoup/](https://www.crummy.com/software/BeautifulSoup/) (HTML parsing)
 

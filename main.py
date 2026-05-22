@@ -4,7 +4,9 @@ Xdl Download Manager - Main Entry Point
 An open-source alternative to Internet Download Manager (IDM)
 
 Usage:
-    python main.py              # Launch GUI
+    python main.py              # Launch PyQt5 GUI
+    python main.py --web        # Launch web UI (FastAPI + Next.js)
+    python main.py --api        # Launch API server only
     python main.py --cli URL    # Download from command line
     python main.py --info URL   # Get URL info without downloading
 """
@@ -12,6 +14,8 @@ Usage:
 import sys
 import os
 import argparse
+import subprocess
+import signal
 
 
 def check_dependencies():
@@ -50,7 +54,7 @@ def check_dependencies():
 
 
 def launch_gui():
-    """Launch the graphical user interface."""
+    """Launch the PyQt5 graphical user interface."""
     from PyQt5.QtWidgets import QApplication
     from PyQt5.QtCore import Qt
     from xdl.gui.main_window import MainWindow
@@ -123,11 +127,76 @@ def launch_gui():
     sys.exit(app.exec_())
 
 
+def launch_api(port=8000, host="0.0.0.0", ngrok=False, ngrok_token=""):
+    """Launch the FastAPI backend API server."""
+    # Use the api.py module
+    api_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "api.py")
+    cmd = [sys.executable, api_path, "--port", str(port), "--host", host]
+    if ngrok:
+        cmd.append("--ngrok")
+    if ngrok_token:
+        cmd.extend(["--ngrok-token", ngrok_token])
+    subprocess.run(cmd)
+
+
+def launch_web(port=8000, host="0.0.0.0", ngrok=False, ngrok_token=""):
+    """Launch both the API backend and the Next.js frontend."""
+    api_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "api.py")
+    web_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "web")
+
+    # Start API server in background
+    api_cmd = [sys.executable, api_path, "--port", str(port), "--host", host]
+    if ngrok:
+        api_cmd.append("--ngrok")
+    if ngrok_token:
+        api_cmd.extend(["--ngrok-token", ngrok_token])
+
+    print("\n" + "=" * 60)
+    print("  Xdl Download Manager - Web Mode")
+    print("  Starting API server + Next.js frontend")
+    print("=" * 60)
+    print(f"\n  API: http://{host}:{port}")
+    print(f"  Frontend: http://localhost:3000")
+    print(f"  API Docs: http://{host}:{port}/docs")
+    print("=" * 60 + "\n")
+
+    api_process = subprocess.Popen(api_cmd)
+
+    # Start Next.js frontend in background
+    web_process = None
+    if os.path.exists(os.path.join(web_path, "package.json")):
+        try:
+            web_process = subprocess.Popen(
+                ["npx", "next", "dev", "-p", "3000"],
+                cwd=web_path,
+            )
+            print("  Next.js frontend started on http://localhost:3000")
+        except FileNotFoundError:
+            print("  [WARNING] npx/next not found. Install Node.js and run 'npm install' in the web/ directory.")
+            print("  API server is still running at http://localhost:8000")
+    else:
+        print("  [INFO] Web UI not installed. Run 'npm install' in the web/ directory.")
+        print("  API server is running at http://localhost:8000")
+        print("  Alternatively, use: python3 gradio_demo.py")
+
+    try:
+        # Wait for either process to complete
+        api_process.wait()
+    except KeyboardInterrupt:
+        print("\n\nShutting down...")
+        api_process.terminate()
+        if web_process:
+            web_process.terminate()
+        api_process.wait()
+        if web_process:
+            web_process.wait()
+
+
 def cli_download(url: str, output: str = "", format_type: str = "",
                  quality: str = "", audio_only: bool = False):
     """Download from command line."""
     from xdl.downloaders.router import DownloadRouter
-    from xdl.core.models import DownloadItem, DownloadCategory
+    from xdl.core.models import DownloadItem, DownloadCategory, DownloadStatus
     from xdl.utils.helpers import format_size
 
     router = DownloadRouter()
@@ -198,11 +267,11 @@ def cli_download(url: str, output: str = "", format_type: str = "",
         return
 
     if item.status == DownloadStatus.COMPLETED:
-        print(f"\n\n✅ Download complete: {os.path.join(item.save_path, item.filename)}")
+        print(f"\n\nDownload complete: {os.path.join(item.save_path, item.filename)}")
     elif item.status == DownloadStatus.ERROR:
-        print(f"\n\n❌ Download failed: {item.error_message}")
+        print(f"\n\nDownload failed: {item.error_message}")
     else:
-        print(f"\n\n⚠ Download status: {item.status.value}")
+        print(f"\n\nDownload status: {item.status.value}")
 
 
 def show_info(url: str):
@@ -237,10 +306,12 @@ def main():
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
-  python main.py                          Launch GUI
+  python main.py                          Launch PyQt5 GUI
+  python main.py --web                    Launch web UI (FastAPI + Next.js)
+  python main.py --api                    Launch API server only
   python main.py --cli URL                Download from URL
   python main.py --cli URL -a             Download as audio (MP3)
-  python main_dl.py --cli URL -f mp3      Download as MP3
+  python main.py --cli URL -f mp3         Download as MP3
   python main.py --cli URL -o /path/to    Save to specific folder
   python main.py --info URL               Show URL information
         """
@@ -248,6 +319,12 @@ Examples:
 
     parser.add_argument("--cli", metavar="URL", help="Download URL from command line")
     parser.add_argument("--info", metavar="URL", help="Show URL information")
+    parser.add_argument("--web", action="store_true", help="Launch web UI (API + Next.js)")
+    parser.add_argument("--api", action="store_true", help="Launch API server only")
+    parser.add_argument("--ngrok", action="store_true", help="Start ngrok tunnel (with --web or --api)")
+    parser.add_argument("--ngrok-token", type=str, default="", help="Ngrok auth token")
+    parser.add_argument("--port", type=int, default=8000, help="API port (default: 8000)")
+    parser.add_argument("--host", type=str, default="0.0.0.0", help="API host (default: 0.0.0.0)")
     parser.add_argument("-o", "--output", default="", help="Output directory")
     parser.add_argument("-f", "--format", default="", help="Media format (mp3, aac, mp4, etc.)")
     parser.add_argument("-q", "--quality", default="best", help="Video quality (best, 720p, 480p, 360p)")
@@ -265,6 +342,16 @@ Examples:
             format_type=args.format,
             quality=args.quality,
             audio_only=args.audio,
+        )
+    elif args.web:
+        launch_web(
+            port=args.port, host=args.host,
+            ngrok=args.ngrok, ngrok_token=args.ngrok_token,
+        )
+    elif args.api:
+        launch_api(
+            port=args.port, host=args.host,
+            ngrok=args.ngrok, ngrok_token=args.ngrok_token,
         )
     elif args.no_gui:
         print("No URL specified. Use --cli URL to download or --info URL to get info.")
