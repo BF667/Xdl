@@ -1,8 +1,14 @@
 # Xdl Download Manager
 
+[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/BF667/Xdl/blob/main/Xdl_Colab_Demo.ipynb)
+[![License: Unlicense](https://img.shields.io/badge/license-Unlicense-blue.svg)](http://unlicense.org/)
+[![Python 3.8+](https://img.shields.io/badge/python-3.8%2B-blue.svg)](https://www.python.org/downloads/)
+
 **An open-source alternative to Internet Download Manager (IDM)** — built with Python, TypeScript, and Next.js.
 
 Xdl is a powerful, feature-rich download manager that supports video/audio downloads from 1000+ sites, cloud storage services, and generic HTTP/HTTPS file downloads with multi-threaded segmented downloading, resume support, and a modern web interface deployable via ngrok.
+
+> **Try it instantly in Google Colab** — click the badge above, or open [`Xdl_Colab_Demo.ipynb`](Xdl_Colab_Demo.ipynb) for a guided walkthrough with CLI, Gradio web UI, and Python API examples.
 
 ---
 
@@ -103,25 +109,34 @@ python3 main.py --info URL                # Show URL information only
 
 ---
 
-## Installation
+## Quick Start
 
-### Prerequisites
+### Google Colab (Zero Setup)
+Open the [Colab demo notebook](https://colab.research.google.com/github/BF667/Xdl/blob/main/Xdl_Colab_Demo.ipynb) and start downloading in seconds — no local installation required. The notebook walks you through CLI downloads, Gradio web UI, and the Python API.
+
+### Local Installation
+
+#### Prerequisites
 - **Python 3.8+**
 - **Node.js 18+** (for the TypeScript web UI)
 - **FFmpeg** (required for audio extraction and video merging) — [Download](https://ffmpeg.org/download.html)
 
-### Install Python Dependencies
+#### Install Python Dependencies
 
 ```bash
+git clone https://github.com/BF667/Xdl.git
+cd Xdl
 pip install -r requirements.txt
 ```
 
 Or install individually:
 ```bash
-pip install PyQt5 yt-dlp requests beautifulsoup4 tqdm pyperclip lxml gradio fastapi uvicorn pyngrok
+pip install yt-dlp requests beautifulsoup4 tqdm lxml gradio fastapi uvicorn pyngrok
 ```
 
-### Install Web UI Dependencies
+> **Note:** `PyQt5` is only needed for the desktop GUI mode. Skip it if you only use the web UI or CLI.
+
+#### Install Web UI Dependencies
 
 ```bash
 cd web
@@ -163,6 +178,38 @@ python3 main.py --info https://youtube.com/watch?v=dQw4w9WgXcQ
 
 ---
 
+## Python API
+
+Xdl can be used as a Python library for programmatic downloads:
+
+```python
+from xdl.downloaders.router import DownloadRouter
+from xdl.core.models import DownloadItem, DownloadStatus, DownloadCategory
+from xdl.utils.helpers import format_size, format_speed, format_time
+
+# Initialize the download router
+router = DownloadRouter()
+
+# Detect what site a URL belongs to
+site = router.detect_url("https://youtube.com/watch?v=dQw4w9WgXcQ")
+print(f"Detected site: {site}")
+
+# Get URL info without downloading
+info = router.get_info("https://example.com/file.zip")
+print(f"Filename: {info.get('filename', 'Unknown')}")
+print(f"File size: {format_size(info.get('file_size', 0))}")
+
+# Create a download item and start downloading
+item = router.create_item(url="https://example.com/file.zip", save_path="/tmp/downloads")
+downloader = router.get_downloader(item.url)
+thread = downloader.start(item)
+thread.join()  # Wait for download to complete
+
+print(f"Status: {item.status.value}")
+```
+
+---
+
 ## Project Structure
 
 ```
@@ -170,6 +217,7 @@ Xdl/
 ├── main.py                          # Entry point (PyQt5 GUI + CLI modes)
 ├── api.py                           # FastAPI backend (REST API + WebSocket)
 ├── gradio_demo.py                   # Gradio 6+ web demo (legacy)
+├── Xdl_Colab_Demo.ipynb             # Google Colab demo notebook
 ├── requirements.txt                 # Python dependencies
 ├── setup.py                         # Package setup
 ├── LICENSE                          # Unlicense (Public Domain)
