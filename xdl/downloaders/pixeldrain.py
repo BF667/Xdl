@@ -3,6 +3,7 @@ Pixeldrain downloader - enhanced version of the original Xdl module.
 """
 
 import os
+import re
 import time
 import threading
 
@@ -49,7 +50,6 @@ class PixeldrainDownloader(BaseDownloader):
             # Get filename from Content-Disposition
             cd = response.headers.get("Content-Disposition", "")
             if cd:
-                import re
                 match = re.search(r'filename="?([^";\n]+)"?', cd)
                 if match:
                     item.filename = match.group(1)

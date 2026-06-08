@@ -50,13 +50,19 @@ Powered by [yt-dlp](https://github.com/yt-dlp/yt-dlp), Xdl supports downloading 
 ### TypeScript Web Interface (Primary UI)
 The main web interface is built with **Next.js 16 + TypeScript + Tailwind CSS + shadcn/ui**, providing a modern, responsive download manager that works in any browser and can be deployed via ngrok for remote access:
 
-- **Stats dashboard** — Real-time overview of total, active, completed downloads and speed
+- **Stats dashboard** — Real-time overview of total, active, completed downloads and speed with gradient-accented cards
+- **Dark mode** — Full light/dark theme support with system preference detection and manual toggle
+- **WebSocket real-time updates** — Live download progress via WebSocket with automatic fallback to polling
+- **Connection indicator** — Shows WebSocket or polling connection status in the header
 - **Add Download** — URL input with auto-detection, quality/format selection, segment control, and batch download support
-- **Downloads list** — Filter by status or category, pause/resume/cancel/remove controls, progress bars with speed and ETA
+- **Downloads list** — Search by filename/URL, sort by date/name/size/progress/speed, filter by status or category, with confirmation dialogs for destructive actions
 - **URL Info** — Analyze any URL to see site, filename, size, and category before downloading
 - **Settings** — Configure save path, concurrent downloads, segments, proxy, user-agent, and speed limit
 - **About** — Feature overview and credits
-- **Auto-refresh** — Downloads poll every 2 seconds for live progress updates
+- **Toast notifications** — Real-time feedback for download actions and errors via sonner
+- **Animated progress** — Shimmer effect on active download progress bars
+- **Mobile responsive** — Stacked layout on small screens with touch-friendly controls
+- **Component-based architecture** — Clean separation with individual component files for maintainability
 - **Ngrok ready** — Deploy with one command for public access
 
 **Web UI Screenshots:**

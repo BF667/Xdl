@@ -5,6 +5,7 @@ and resume.
 """
 
 import os
+import re
 import time
 import threading
 
@@ -48,7 +49,6 @@ class GenericDownloader(BaseDownloader):
 
             filename = "unknown"
             if "Content-Disposition" in resp.headers:
-                import re
                 cd = resp.headers["Content-Disposition"]
                 match = re.search(r'filename[^;=\n]*=((["\']).*?\2|[^;\n]*)', cd)
                 if match:

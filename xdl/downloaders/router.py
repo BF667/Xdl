@@ -3,6 +3,7 @@ Download router - automatically selects the appropriate downloader
 based on the URL and manages downloader instances.
 """
 
+import time
 import threading
 from typing import Optional, List, Type
 
@@ -150,13 +151,13 @@ class DownloadRouter:
         """Run download with error handling."""
         try:
             item.status = DownloadStatus.DOWNLOADING
-            item.started_at = __import__("time").time()
+            item.started_at = time.time()
             downloader.download(item, stop_event)
 
             if not stop_event.is_set():
                 item.status = DownloadStatus.COMPLETED
                 item.progress = 100.0
-                item.completed_at = __import__("time").time()
+                item.completed_at = time.time()
                 item.speed = 0.0
                 if self.on_complete:
                     self.on_complete(item)

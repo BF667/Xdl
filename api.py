@@ -96,7 +96,6 @@ class DownloadManager:
 
     def remove_ws_client(self, ws: WebSocket):
         with self._ws_lock:
-            self._ws_clients.discard(ws) if ws in self._ws_clients else None
             try:
                 self._ws_clients.remove(ws)
             except ValueError:
@@ -567,6 +566,16 @@ async def periodic_broadcast():
 @app.on_event("startup")
 async def startup_event():
     asyncio.create_task(periodic_broadcast())
+
+
+# Note: @app.on_event("startup") is deprecated in newer FastAPI versions.
+# For FastAPI >= 0.100, consider using lifespan context managers instead:
+# @asynccontextmanager
+# async def lifespan(app: FastAPI):
+#     task = asyncio.create_task(periodic_broadcast())
+#     yield
+#     task.cancel()
+# app = FastAPI(lifespan=lifespan, ...)
 
 
 # ──────────────────────────────────────────────

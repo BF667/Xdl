@@ -6,6 +6,7 @@ resume support, and protocol detection.
 import os
 import re
 import time
+import shutil
 import threading
 import tempfile
 import hashlib
@@ -368,7 +369,6 @@ class DownloadEngine:
                                 out_f.write(seg_f.read())
 
                 # Cleanup temp files
-                import shutil
                 shutil.rmtree(temp_dir, ignore_errors=True)
 
             else:
@@ -456,7 +456,6 @@ class DownloadEngine:
         self.pause_download(item_id)
 
         # Cleanup temp files
-        import shutil
         temp_dir = tempfile.gettempdir()
         for d in os.listdir(temp_dir):
             if d.startswith(f"xdl_{item_id}_"):
